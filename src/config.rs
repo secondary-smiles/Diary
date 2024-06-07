@@ -6,14 +6,18 @@ use tokio::process::Command;
 pub struct Config {
     pub location: PathBuf,
 
-    pub entry: Matter,
-    pub snippet: Matter,
+    pub entry: Entry,
+    pub snippet: Snippet,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Matter {
+pub struct Snippet {
     pub frontmatter: MatterContent,
     pub endmatter: MatterContent,
+}
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Entry {
+    pub frontmatter: MatterContent,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -28,23 +32,19 @@ impl std::default::Default for Config {
         path.push("diary");
         Self {
             location: path,
-            entry: Matter {
+            entry: Entry {
                 frontmatter: MatterContent {
                     content: None,
-                    cmd: Some("printf \"# %s's Diary\n\n\" \"$(whoami)\"".to_string()),
-                },
-                endmatter: MatterContent {
-                    content: None,
-                    cmd: Some("printf \"> On %s\" \"$(date +%F)\n\"".to_string()),
+                    cmd: Some("printf \"# %s's Diary\n\" \"$(whoami)\"".to_string()),
                 },
             },
-            snippet: Matter {
+            snippet: Snippet {
                 frontmatter: MatterContent {
-                    content: Some("---\n".to_string()),
+                    content: Some("\n---\n".to_string()),
                     cmd: Some("printf \"## At %s\" \"$(date +%R)\n\"".to_string()),
                 },
                 endmatter: MatterContent {
-                    content: Some("\n---".to_string()),
+                    content: Some("\n---\n".to_string()),
                     cmd: None,
                 },
             },
@@ -52,17 +52,16 @@ impl std::default::Default for Config {
     }
 }
 
-impl Matter {}
-
 impl MatterContent {
     pub async fn render(&self) -> eyre::Result<String> {
-        let mut value = String::new();
+        let mut value = self.content.clone().unwrap_or_default();
         if let Some(cmd) = &self.cmd {
             let output = Command::new("sh")
                 .args(&["-c", cmd.as_str()])
                 .output()
                 .await?;
+            value += &String::from_utf8(output.stdout).unwrap();
         }
-        Ok(String::new())
+        Ok(value.to_string())
     }
 }

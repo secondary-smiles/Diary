@@ -16,6 +16,7 @@ pub struct Add {
 }
 
 pub async fn add(args: Add) -> eyre::Result<()> {
+    let config: crate::config::Config = confy::load("diary", None)?;
     let mut cmd = Command::new(args.editor.clone());
     let proc;
     let path;
@@ -43,7 +44,7 @@ pub async fn add(args: Add) -> eyre::Result<()> {
         .await?
         .read_to_string(&mut diary_entry)
         .await?;
-    add_diary_entry(diary_entry).await?;
+    add_diary_entry(diary_entry.trim().to_string()).await?;
 
     Ok(())
 }
@@ -60,17 +61,14 @@ async fn add_diary_entry(contents: String) -> eyre::Result<()> {
     path.push(format!("{}-{}-{}", now.year(), now.month(), now.day()));
     path.set_extension("md");
     if !path.exists() {
+        let frontmatter = config.entry.frontmatter.render().await?;
         fs::create_dir_all(path.parent().unwrap()).await?;
-        let mut file = fs::File::create(path).await?;
-        // file.write_all(frontmatter.as_bytes()).await?;
-    } else {
-        let mut file = fs::OpenOptions::new()
-            .write(true)
-            .append(true)
-            .open(path)
-            .await?;
-        file.write_all(contents.as_bytes()).await?;
+        let mut file = fs::File::create(path.clone()).await?;
+        file.write_all(frontmatter.as_bytes()).await?;
     }
-
+    let frontmatter = config.snippet.frontmatter.render().await?;
+    let mut file = fs::OpenOptions::new().append(true).open(path).await?;
+    file.write_all(frontmatter.as_bytes()).await?;
+    file.write_all(contents.as_bytes()).await?;
     Ok(())
 }
