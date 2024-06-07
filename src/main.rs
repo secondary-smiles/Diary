@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 
 mod add;
+mod config;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -16,7 +17,8 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
-    let args = Args::parse();
+    let mut args = Args::parse();
+   let config = confy::load("diary"); 
 
     if let Some(command) = args.command {
         match command {
