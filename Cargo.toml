@@ -7,11 +7,13 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4.38"
+chrono-english = "0.1.7"
 clap = { version = "4.5.6", features = ["derive", "env"] }
 color-eyre = "0.6.3"
 confy = "0.6.1"
 eyre = "0.6.12"
 home = "0.5.9"
+pulldown-cmark = "0.11.0"
 rand = "0.8.5"
 serde = { version = "1.0.203", features = ["derive"] }
 tempfile = "3.10.1"

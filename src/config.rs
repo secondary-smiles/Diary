@@ -5,6 +5,8 @@ use tokio::process::Command;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
     pub location: PathBuf,
+    pub pager: Option<String>,
+    pub editor: Option<String>,
 
     pub entry: Entry,
     pub snippet: Snippet,
@@ -30,8 +32,11 @@ impl std::default::Default for Config {
     fn default() -> Self {
         let mut path = home::home_dir().unwrap();
         path.push("diary");
+
         Self {
             location: path,
+            pager: std::env::var("PAGER").ok(),
+            editor: std::env::var("EDITOR").ok(),
             entry: Entry {
                 frontmatter: MatterContent {
                     content: None,

@@ -1,4 +1,3 @@
-use chrono::{Datelike, Utc};
 use clap::Parser;
 use rand::distributions::{Alphanumeric, DistString};
 use std::path::PathBuf;
@@ -8,19 +7,24 @@ use tokio::process::Command;
 
 #[derive(Debug, Parser)]
 pub struct Add {
-    #[arg(short, long)]
     file: Option<PathBuf>,
 
-    #[arg(short, long, env)]
-    editor: String,
+    #[arg(short, long)]
+    editor: Option<String>,
+    #[arg(short, long)]
+    date: Option<String>,
 }
 
 pub async fn add(args: Add) -> eyre::Result<()> {
     let config: crate::config::Config = confy::load("diary", None)?;
-    let mut cmd = Command::new(args.editor.clone());
+    let editor = args.editor.unwrap_or(config.editor.unwrap());
+    let mut cmd = Command::new(&editor);
     let proc;
     let path;
     if let Some(file) = args.file {
+        if !file.exists() {
+            fs::File::create(file.clone()).await?;
+        }
         proc = cmd.arg(file.clone()).spawn()?.wait().await?;
         path = file.to_str().unwrap().to_string();
     } else {
@@ -33,8 +37,8 @@ pub async fn add(args: Add) -> eyre::Result<()> {
     }
     if !proc.success() {
         return Err(eyre::eyre!(format!(
-            "'{}' exited with status code {}.",
-            args.editor,
+            "Editor '{}' exited with status code {}.",
+            editor,
             proc.code().unwrap()
         )));
     }
@@ -44,22 +48,19 @@ pub async fn add(args: Add) -> eyre::Result<()> {
         .await?
         .read_to_string(&mut diary_entry)
         .await?;
-    add_diary_entry(diary_entry.trim().to_string()).await?;
+    add_diary_entry(diary_entry.trim().to_string(), args.date).await?;
 
     Ok(())
 }
 
-async fn add_diary_entry(contents: String) -> eyre::Result<()> {
+async fn add_diary_entry(contents: String, date: Option<String>) -> eyre::Result<()> {
     if contents.is_empty() {
-        return Err(eyre::eyre!("Diary entry empty, aborting."));
+        return Err(eyre::eyre!("Diary snippet empty, aborting."));
     }
 
     let config: crate::config::Config = confy::load("diary", None)?;
-    let now = Utc::now();
-    let mut path = config.location;
-    path.push(now.year().to_string());
-    path.push(format!("{}-{}-{}", now.year(), now.month(), now.day()));
-    path.set_extension("md");
+    let use_date = crate::util::pick_date(date);
+    let path = crate::util::get_entry_path(use_date)?;
     if !path.exists() {
         let frontmatter = config.entry.frontmatter.render().await?;
         fs::create_dir_all(path.parent().unwrap()).await?;
