@@ -17,8 +17,8 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
-    let mut args = Args::parse();
-   let config = confy::load("diary"); 
+    color_eyre::install()?;
+    let args = Args::parse();
 
     if let Some(command) = args.command {
         match command {

@@ -1,5 +1,9 @@
+use chrono::{Datelike, Utc};
 use clap::Parser;
+use rand::distributions::{Alphanumeric, DistString};
 use std::path::PathBuf;
+use tokio::fs;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::process::Command;
 
 #[derive(Debug, Parser)]
@@ -19,8 +23,11 @@ pub async fn add(args: Add) -> eyre::Result<()> {
         proc = cmd.arg(file.clone()).spawn()?.wait().await?;
         path = file.to_str().unwrap().to_string();
     } else {
-        let file = tempfile::NamedTempFile::new()?;
-        path = format!("{}.md", file.into_temp_path().to_str().unwrap());
+        let filename = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
+        let mut file_path = PathBuf::from("/tmp");
+        file_path.push(filename);
+        file_path.set_extension("md");
+        path = file_path.to_str().unwrap().to_string();
         proc = cmd.arg(path.clone()).spawn()?.wait().await?;
     }
     if !proc.success() {
@@ -31,11 +38,39 @@ pub async fn add(args: Add) -> eyre::Result<()> {
         )));
     }
 
-    add_diary_entry(path).await?;
+    let mut diary_entry = String::new();
+    fs::File::open(path)
+        .await?
+        .read_to_string(&mut diary_entry)
+        .await?;
+    add_diary_entry(diary_entry).await?;
 
     Ok(())
 }
 
-async fn add_diary_entry(path: String) -> eyre::Result<()> {
+async fn add_diary_entry(contents: String) -> eyre::Result<()> {
+    if contents.is_empty() {
+        return Err(eyre::eyre!("Diary entry empty, aborting."));
+    }
+
+    let config: crate::config::Config = confy::load("diary", None)?;
+    let now = Utc::now();
+    let mut path = config.location;
+    path.push(now.year().to_string());
+    path.push(format!("{}-{}-{}", now.year(), now.month(), now.day()));
+    path.set_extension("md");
+    if !path.exists() {
+        fs::create_dir_all(path.parent().unwrap()).await?;
+        let mut file = fs::File::create(path).await?;
+        // file.write_all(frontmatter.as_bytes()).await?;
+    } else {
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open(path)
+            .await?;
+        file.write_all(contents.as_bytes()).await?;
+    }
+
     Ok(())
 }

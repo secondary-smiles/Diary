@@ -6,9 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+chrono = "0.4.38"
 clap = { version = "4.5.6", features = ["derive", "env"] }
+color-eyre = "0.6.3"
 confy = "0.6.1"
 eyre = "0.6.12"
+home = "0.5.9"
+rand = "0.8.5"
 serde = { version = "1.0.203", features = ["derive"] }
 tempfile = "3.10.1"
 tokio = { version = "1.38.0", features = ["full"] }
