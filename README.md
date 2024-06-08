@@ -35,7 +35,7 @@ cmd = '''printf "# %s's Diary" "$(whoami)"''' # Command to be invoked with sh -c
 
 [snippet.frontmatter] # Content to prepend to a snippet.
 content = "\n---\n"
-cmd = '''printf "## At %s" "$(date +%R)'''"
+cmd = '''printf "## At %s" "$(date +%R)"'''
 
 [snippet.endmatter] # Content to append to a snippet.
 content = "\n---\n"
