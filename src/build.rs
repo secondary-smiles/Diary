@@ -31,7 +31,6 @@ pub struct Build {
 }
 
 pub async fn build(args: Build) -> eyre::Result<()> {
-    let date = crate::util::pick_date(args.date.clone());
     let config: crate::config::Config = confy::load("diary", None)?;
 
     let mut css_tags = vec![];

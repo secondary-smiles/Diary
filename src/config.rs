@@ -55,7 +55,7 @@ impl std::default::Default for Config {
             snippet: Snippet {
                 frontmatter: MatterContent {
                     content: Some("\n---\n".to_string()),
-                    cmd: Some("printf \"## At %s\" \"$(date +%R)\n\"".to_string()),
+                    cmd: Some("printf \"## At %s\" \"$(date +%R)\"".to_string()),
                 },
                 endmatter: MatterContent {
                     content: Some("\n---\n".to_string()),
