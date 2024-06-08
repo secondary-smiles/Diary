@@ -1,5 +1,6 @@
 use clap::Parser;
 use pulldown_cmark::Options;
+use std::fs;
 use std::path::PathBuf;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -8,7 +9,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 pub struct Build {
     date: Option<String>,
 
-    /// Path to output built HTML file to.
+    /// Directory to write built HTML file to.
     #[arg(short, long, default_value = ".")]
     output: PathBuf,
 
@@ -31,27 +32,8 @@ pub struct Build {
 
 pub async fn build(args: Build) -> eyre::Result<()> {
     let date = crate::util::pick_date(args.date.clone());
-    if args.all {
-        todo!();
-    } else {
-        let page = make_page(&args).await?;
-        if args.output.to_str().unwrap() == "-" {
-            println!("{page}");
-        } else {
-            let mut path = args.output.clone();
-            if args.output.is_dir() {
-                let mut file_path = crate::util::get_entry_file_name(date);
-                file_path.set_extension("html");
-                path = path.join(file_path);
-            }
-            File::create(path).await?.write_all(page.as_bytes()).await?;
-        }
-    }
-    Ok(())
-}
-
-async fn make_page(args: &Build) -> eyre::Result<String> {
     let config: crate::config::Config = confy::load("diary", None)?;
+
     let mut css_tags = vec![];
     let styles = args
         .css
@@ -74,18 +56,70 @@ async fn make_page(args: &Build) -> eyre::Result<String> {
         script_tags.push(el("script", None, s));
     }
     let date = crate::util::pick_date(args.date.clone());
-    let contents = parse(crate::util::get_entry_string(date).await?);
+    if args.all {
+        let entries = all_entries(config.location)?;
+        for entry in entries {
+            let mut contents = String::new();
+            File::open(entry.clone())
+                .await?
+                .read_to_string(&mut contents)
+                .await?;
+            let parsed = parse(contents);
+            let page = make_page(&css_tags, &script_tags, args.title.clone(), parsed).await?;
+            if args.output.to_str().unwrap() == "-" {
+                println!("{page}");
+            } else {
+                let mut path = args.output.clone();
+                path.push(entry.file_name().unwrap());
+                path.set_extension("html");
+                File::create(path).await?.write_all(page.as_bytes()).await?;
+            }
+        }
+    } else {
+        let contents = parse(crate::util::get_entry_string(date).await?);
+        let page = make_page(&css_tags, &script_tags, args.title, contents).await?;
+        if args.output.to_str().unwrap() == "-" {
+            println!("{page}");
+        } else {
+            let mut path = args.output.clone();
+            let mut file_path = crate::util::get_entry_file_name(date);
+            file_path.set_extension("html");
+            path = path.join(file_path);
+            File::create(path).await?.write_all(page.as_bytes()).await?;
+        }
+    }
+    Ok(())
+}
+
+fn all_entries(base: PathBuf) -> eyre::Result<Vec<PathBuf>> {
+    let mut files = vec![];
+
+    let listing = fs::read_dir(base)?;
+    for entry in listing {
+        let entry = entry?;
+        if entry.path().is_dir() {
+            files.append(&mut all_entries(entry.path())?);
+        } else {
+            files.push(entry.path());
+        }
+    }
+    Ok(files)
+}
+
+async fn make_page(
+    css_tags: &Vec<String>,
+    script_tags: &Vec<String>,
+    title: Option<String>,
+    contents: String,
+) -> eyre::Result<String> {
+    let config: crate::config::Config = confy::load("diary", None)?;
     let html = html(
         vec![
             el(
                 "head",
                 None,
                 vec![
-                    el(
-                        "title",
-                        None,
-                        args.title.clone().unwrap_or(date.to_string()),
-                    ),
+                    el("title", None, title.unwrap_or("Diary".to_string())),
                     css_tags.join("\n"),
                     script_tags.join("\n"),
                     config.build.frontmatter.render().await?,
