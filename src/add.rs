@@ -48,7 +48,7 @@ pub async fn add(args: Add) -> eyre::Result<()> {
         .await?
         .read_to_string(&mut diary_entry)
         .await?;
-    add_diary_entry(diary_entry.trim().to_string(), args.date).await?;
+    add_diary_entry(format!("\n{}\n", diary_entry.trim()), args.date).await?;
 
     Ok(())
 }

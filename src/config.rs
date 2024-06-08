@@ -10,6 +10,7 @@ pub struct Config {
 
     pub entry: Entry,
     pub snippet: Snippet,
+    pub build: Build,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -23,6 +24,14 @@ pub struct Entry {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct Build {
+    pub css: Option<Vec<PathBuf>>,
+    pub script: Option<Vec<PathBuf>>,
+    pub frontmatter: MatterContent,
+    pub endmatter: MatterContent,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct MatterContent {
     pub content: Option<String>,
     pub cmd: Option<String>,
@@ -52,6 +61,12 @@ impl std::default::Default for Config {
                     content: Some("\n---\n".to_string()),
                     cmd: None,
                 },
+            },
+            build: Build {
+                css: None,
+                script: None,
+                frontmatter: MatterContent::default(),
+                endmatter: MatterContent::default(),
             },
         }
     }

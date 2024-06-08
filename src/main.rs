@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 
 mod add;
+mod build;
 mod config;
 mod util;
 mod view;
@@ -9,7 +10,7 @@ mod view;
 #[command(version, about, long_about = None)]
 struct Args {
     #[command(subcommand)]
-    command: Option<Commands>,
+    command: Commands,
 }
 
 #[derive(Subcommand, Debug)]
@@ -21,6 +22,10 @@ enum Commands {
     /// View an entry from today or in the past.
     #[clap(visible_alias("v"))]
     View(view::View),
+
+    /// Convert a diary entry to HTML.
+    #[clap(visible_alias("b"))]
+    Build(build::Build),
 }
 
 #[tokio::main]
@@ -28,11 +33,10 @@ async fn main() -> eyre::Result<()> {
     color_eyre::install()?;
     let args = Args::parse();
 
-    if let Some(command) = args.command {
-        match command {
-            Commands::Add(args) => add::add(args).await?,
-            Commands::View(args) => view::view(args).await?,
-        }
+    match args.command {
+        Commands::Add(args) => add::add(args).await?,
+        Commands::View(args) => view::view(args).await?,
+        Commands::Build(args) => build::build(args).await?,
     }
 
     Ok(())

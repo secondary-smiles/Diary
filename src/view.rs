@@ -1,6 +1,4 @@
 use clap::Parser;
-use tokio::fs::File;
-use tokio::io::AsyncReadExt;
 use tokio::process::Command;
 
 #[derive(Debug, Parser)]
@@ -30,10 +28,7 @@ pub async fn view(args: View) -> eyre::Result<()> {
     }
 
     if args.stdout {
-        let mut file = File::open(path).await?;
-        let mut contents: String = String::new();
-        file.read_to_string(&mut contents).await?;
-
+        let contents = crate::util::get_entry_string(use_date).await?;
         println!("{}", contents);
         return Ok(());
     }
