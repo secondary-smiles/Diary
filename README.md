@@ -11,10 +11,12 @@ Diary entries are created every day, and each addition is called a *snippet*. Ad
 Usage: diary <COMMAND>
 
 Commands:
-  add    Add a new snippet to today's entry [aliases: a]
-  view   View an entry from today or in the past [aliases: v]
-  build  Convert a diary entry to HTML [aliases: b]
-  help   Print this message or the help of the given subcommand(s)
+  add     Add a new snippet to today's entry [aliases: a]
+  view    View an entry from today or in the past [aliases: v]
+  build   Convert a diary entry to HTML [aliases: b]
+  edit    Edit a diary entry [aliases: e]
+  remove  Remove a diary entry [aliases: r]
+  help    Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help     Print help

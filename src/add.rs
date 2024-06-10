@@ -1,5 +1,4 @@
 use clap::Parser;
-use rand::distributions::{Alphanumeric, DistString};
 use std::path::PathBuf;
 use tokio::fs;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -7,12 +6,12 @@ use tokio::process::Command;
 
 #[derive(Debug, Parser)]
 pub struct Add {
-    file: Option<PathBuf>,
+    date: Option<String>,
 
     #[arg(short, long)]
     editor: Option<String>,
     #[arg(short, long)]
-    date: Option<String>,
+    file: Option<PathBuf>,
 }
 
 pub async fn add(args: Add) -> eyre::Result<()> {
@@ -28,10 +27,7 @@ pub async fn add(args: Add) -> eyre::Result<()> {
         proc = cmd.arg(file.clone()).spawn()?.wait().await?;
         path = file.to_str().unwrap().to_string();
     } else {
-        let filename = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
-        let mut file_path = PathBuf::from("/tmp");
-        file_path.push(filename);
-        file_path.set_extension("md");
+        let file_path = crate::util::tempfile();
         path = file_path.to_str().unwrap().to_string();
         proc = cmd.arg(path.clone()).spawn()?.wait().await?;
     }

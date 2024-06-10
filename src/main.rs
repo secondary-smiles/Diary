@@ -3,6 +3,8 @@ use clap::{Parser, Subcommand};
 mod add;
 mod build;
 mod config;
+mod edit;
+mod remove;
 mod util;
 mod view;
 
@@ -26,6 +28,14 @@ enum Commands {
     /// Convert a diary entry to HTML.
     #[clap(visible_alias("b"))]
     Build(build::Build),
+
+    /// Edit a diary entry.
+    #[clap(visible_alias("e"))]
+    Edit(edit::Edit),
+
+    /// Remove a diary entry.
+    #[clap(visible_alias("r"))]
+    Remove(remove::Remove),
 }
 
 #[tokio::main]
@@ -37,6 +47,8 @@ async fn main() -> eyre::Result<()> {
         Commands::Add(args) => add::add(args).await?,
         Commands::View(args) => view::view(args).await?,
         Commands::Build(args) => build::build(args).await?,
+        Commands::Edit(args) => edit::edit(args).await?,
+        Commands::Remove(args) => remove::remove(args).await?,
     }
 
     Ok(())

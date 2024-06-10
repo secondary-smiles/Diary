@@ -1,5 +1,6 @@
 use chrono::{DateTime, Datelike, Local};
 use chrono_english::{parse_date_string, Dialect};
+use rand::distributions::{Alphanumeric, DistString};
 use std::path::PathBuf;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
@@ -52,4 +53,12 @@ pub async fn get_entry_string(date: DateTime<Local>) -> eyre::Result<String> {
         .await?;
 
     Ok(contents)
+}
+pub fn tempfile() -> PathBuf {
+    let filename = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
+    let mut file_path = PathBuf::from("/tmp");
+    file_path.push(filename);
+    file_path.set_extension("md");
+
+    file_path
 }

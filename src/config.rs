@@ -49,16 +49,16 @@ impl std::default::Default for Config {
             entry: Entry {
                 frontmatter: MatterContent {
                     content: None,
-                    cmd: Some("printf \"# %s's Diary\n\" \"$(whoami)\"".to_string()),
+                    cmd: None,
                 },
             },
             snippet: Snippet {
                 frontmatter: MatterContent {
-                    content: Some("\n---\n".to_string()),
-                    cmd: Some("printf \"## At %s\" \"$(date +%R)\"".to_string()),
+                    content: Some("\n".to_string()),
+                    cmd: None,
                 },
                 endmatter: MatterContent {
-                    content: Some("\n---\n".to_string()),
+                    content: None,
                     cmd: None,
                 },
             },
@@ -77,7 +77,7 @@ impl MatterContent {
         let mut value = self.content.clone().unwrap_or_default();
         if let Some(cmd) = &self.cmd {
             let output = Command::new("sh")
-                .args(&["-c", cmd.as_str()])
+                .args(["-c", cmd.as_str()])
                 .output()
                 .await?;
             value += &String::from_utf8(output.stdout).unwrap();

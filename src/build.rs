@@ -37,7 +37,7 @@ pub async fn build(args: Build) -> eyre::Result<()> {
     let styles = args
         .css
         .clone()
-        .unwrap_or(config.build.css.unwrap_or(vec![]));
+        .unwrap_or(config.build.css.unwrap_or_default());
     for style in styles {
         let mut s = String::new();
         File::open(style).await?.read_to_string(&mut s).await?;
@@ -48,7 +48,7 @@ pub async fn build(args: Build) -> eyre::Result<()> {
     let scripts = args
         .script
         .clone()
-        .unwrap_or(config.build.script.unwrap_or(vec![]));
+        .unwrap_or(config.build.script.unwrap_or_default());
     for script in scripts {
         let mut s = String::new();
         File::open(script).await?.read_to_string(&mut s).await?;
@@ -106,18 +106,18 @@ fn all_entries(base: PathBuf) -> eyre::Result<Vec<PathBuf>> {
 }
 
 async fn make_page(
-    css_tags: &Vec<String>,
-    script_tags: &Vec<String>,
+    css_tags: &[String],
+    script_tags: &[String],
     title: Option<String>,
     contents: String,
 ) -> eyre::Result<String> {
     let config: crate::config::Config = confy::load("diary", None)?;
     let html = html(
-        vec![
+        [
             el(
                 "head",
                 None,
-                vec![
+                [
                     el("title", None, title.unwrap_or("Diary".to_string())),
                     css_tags.join("\n"),
                     script_tags.join("\n"),
@@ -128,7 +128,7 @@ async fn make_page(
             el(
                 "body",
                 None,
-                vec![contents, config.build.endmatter.render().await?].join("\n"),
+                [contents, config.build.endmatter.render().await?].join("\n"),
             ),
         ]
         .join("\n"),
